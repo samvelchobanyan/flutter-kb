@@ -2,6 +2,14 @@
 
 ## 1. Identity and purpose
 
+**Purpose of this wiki: provide context for an AI agent working in a Flutter project.**
+
+Two practical goals:
+1. Help the agent quickly restore project context and remember accepted decisions (instead of re-scanning code from scratch each session).
+2. Accumulate transferable engineering experience across projects.
+
+The wiki is **not project documentation** (no lists of files, endpoints, screens) and **not a todo-list** (no pending work). It is a context base that compounds over time as projects contribute experience.
+
 This repository is **Flutter-kb** — a cross-project knowledge base for Flutter mobile development. It captures engineering experience that compounds across projects: principles, patterns, decisions, and pitfalls.
 
 You (Claude Code) are the curator and maintainer of this knowledge base. The human owner (Sam) is the source of truth for what should be captured and how. You execute curation operations; the human reviews and approves substantive changes.
@@ -12,18 +20,31 @@ Two classes of content live here:
 - **Cross-project knowledge** — applicable to any Flutter project (principles, reusable patterns, general pitfalls, cross-project ADRs). Lives in the root of the repository.
 - **Project-scoped knowledge** — specific to a particular project, kept here for historical reference and as a precedent library. Lives in `projects/<project-name>/`. Only ADRs are stored here; project-scoped principles and patterns are not maintained.
 
-**Source-of-truth hierarchy.** When verifying claims for inclusion in the wiki, treat sources in this priority order:
-1. **Actual project code** — the highest authority. Code reflects what was actually implemented.
-2. **Architecture specifications** (e.g. ARCHITECTURE_SPEC.md, DOMAIN_SPEC.md) — close to reality but may lag behind refactorings.
-3. **Discussion transcripts and Claude.ai memory dumps** — hypotheses about what was decided. Often accurate, but may describe ideas that were later changed, abandoned, or never implemented.
+### What goes into the wiki
 
-When sources disagree, the lower-numbered source wins. When wiki content is being written, the source of truth is always the code.
+- **Baseline project knowledge** — layers, conventions, tech stack, style. Even if these align with common Flutter community practice, what matters is "this is how WE do it here". Without baseline, the agent cannot understand context.
+- **Accepted decisions with reasoning** — especially deltas from baseline (changes of approach, new patterns, pitfalls found in work). Decisions are any deliberate engineering choice, not only choices with explicit alternative comparison.
+
+### What does NOT go into the wiki
+
+- **Unfinished discussions** without an accepted decision.
+- **Generic Flutter knowledge** not tied to our conventions (the agent already knows base Flutter from training; wiki adds context, not encyclopedia).
+- **Concrete project state** (file contents, endpoint lists, screen catalogs) — that's documentation, not context.
+
+### Source verification
+
+When writing wiki content, code is consulted to confirm a decision was a real engineering choice (not a hypothetical one from an unfinished discussion). Strict alignment with current project code is **not required** — see Principle 7 in Section 2. Sources are consulted in this priority order when claims need to be checked:
+1. **Actual project code** on the canonical branch (see Section 6.0).
+2. **Architecture specifications** (e.g. ARCHITECTURE_SPEC.md, DOMAIN_SPEC.md).
+3. **Discussion transcripts and memory dumps** — hypotheses about what was decided.
+
+When sources disagree on whether a decision exists at all, the lower-numbered source wins. When a decision is confirmed to exist but its current implementation status varies, the wiki still captures the mature decision; implementation status is not a blocker.
 
 ---
 
-## 2. Six principles
+## 2. Seven principles
 
-These six principles govern how this knowledge base is used by agents working in projects. They are not rules for you (the curator); they are the philosophy that explains why the structure exists. Understand them so your curation supports them.
+These seven principles govern how this knowledge base is used by agents working in projects. They are not rules for you (the curator); they are the philosophy that explains why the structure exists. Understand them so your curation supports them.
 
 **Principle 1 — Wiki is a starting point, not a final answer.** Project agents check the wiki at the start of every task but do not stop there. They reason on top of what the wiki provides.
 
@@ -36,6 +57,8 @@ These six principles govern how this knowledge base is used by agents working in
 **Principle 5 — Distinguish dogma from heuristic.** Severity is encoded explicitly (`required` / `recommended` / `flexible`). Agents calibrate their deference to a page based on its severity.
 
 **Principle 6 — Journal decisions in the moment, do not lose knowledge.** Project agents detect decision events during conversations and immediately log candidates, without writing into the wiki itself.
+
+**Principle 7 — Wiki captures mature decisions, not code state.** The wiki describes engineering decisions that have been thought through and accepted. Source code is consulted to verify a decision was a real engineering choice, not a hypothetical one — but strict alignment with current project code is not required. A decision can be in the wiki even if its implementation is on a feature branch, has been temporarily rolled back, or is pending. Implementation status is project documentation, not wiki content.
 
 ---
 
@@ -85,6 +108,8 @@ Four page types exist. Each maps to a template in `_templates/`.
 | `pattern` | `_templates/pattern.md` | A reusable structural solution to a class of problems. Adapted per context. |
 | `decision` | `_templates/decision.md` | An ADR — a recorded choice between alternatives with justification. May be cross-project or project-scoped. |
 | `pitfall` | `_templates/pitfall.md` | A general trap that can be stepped into repeatedly. Documents symptom, cause, and fix. |
+
+**Note on pitfalls.** Pitfall pages describe a trap and its canonical fix as portable knowledge. Unlike other page types, a pitfall page can exist in the wiki even when the current project has not applied the fix — the trap and the fix remain valuable knowledge regardless. If the current project state matters, mention it in a "Notes" section of the page; do not let project status block writing the pitfall.
 
 **Rules for creating pages:**
 - Always copy from the corresponding template. Do not write pages from scratch.
@@ -152,29 +177,36 @@ code_refs:
 
 You perform five operations on this knowledge base. Each has a specific protocol. Follow the protocol exactly.
 
+### 6.0 Canonical project branch
+
+When wiki operations require reading project source code (verification, `code_refs` population, re-ingest), always read from the **canonical branch** specified by the human at session start (typically `dev`). Never read from feature branches without explicit instruction. Read-only access — do not modify project files.
+
+The path to the project code is provided by the human at the start of any operation that needs it (e.g., "project: `C:\flutter-projects\go_sport\`, canonical branch: `dev`"). Do not assume a hardcoded path or branch. If verification against code is needed but no path or branch was provided, ask before proceeding.
+
+Rationale: the canonical branch reflects mature, integrated state. Feature branches are work in progress and may contain incomplete or rolled-back code, which is not the right reference for wiki content.
+
 ### 6.1 Bootstrap
 
 Bootstrap is a one-time operation that initializes the wiki from existing materials in `bootstrap-sources/`. Run only when explicitly requested by the human.
 
-**Critical context for bootstrap:** the materials in `bootstrap-sources/` (especially `claude-memory.md` and `discussions/`) describe **what was discussed and intended**, not necessarily what was implemented. Some decisions in those materials were later changed in code, abandoned, or never realized. You must verify claims against the actual project code before fixing them in the wiki.
+**Context for bootstrap:** the materials in `bootstrap-sources/` (especially `claude-memory.md` and `discussions/`) describe **what was discussed and intended**, not necessarily what was implemented. Use code as a check on whether a decision was real and reached maturity. Per Principle 7, the wiki captures mature decisions even if implementation has drifted — but does not capture hypotheses that were never settled.
 
 **Protocol:**
 
 1. **Inventory sources.** Read all files in `bootstrap-sources/`. Identify:
-   - `claude-memory.md` — distilled memory from Claude.ai sessions (**hypotheses, verify against code**)
-   - `specs/` — architecture/domain/data/screens specifications from projects (**mostly current but may lag refactorings**)
-   - `discussions/` — selected conversation transcripts (**hypotheses, verify against code**)
+   - `claude-memory.md` — distilled memory from Claude.ai sessions
+   - `specs/` — architecture/domain/data/screens specifications from projects
+   - `discussions/` — selected conversation transcripts
 
-2. **Confirm access to project code.** Bootstrap requires read access to the actual project code. The path to the project is provided by the human at the start of the operation (e.g., "project: `C:\flutter-projects\go_sport\`"). Do not assume any hardcoded path. If the human did not provide a path, ask before proceeding. Without access to code, you cannot verify claims, and the resulting wiki will describe intentions instead of reality.
+2. **Confirm access to canonical branch.** Bootstrap benefits from read access to the canonical branch of the project. The path and branch are provided by the human at the start of the operation (see Section 6.0). Do not assume a hardcoded path. If the human did not provide a path, ask before proceeding.
 
-3. **Extract claim list.** From the source materials, extract a list of candidate claims grouped by topic. Each claim should be specific enough to verify: "Player uses three-layer Notifier/Handler/Service architecture" is verifiable; "Player is well-structured" is not.
+3. **Extract candidate list.** From the source materials, extract a list of candidate decisions and topics grouped by area. Each candidate should be specific enough to assess: "Player uses three-layer Notifier/Handler/Service architecture" is assessable; "Player is well-structured" is not.
 
-4. **Verify each claim against code.** For each claim:
-   - Locate the relevant code in the project
-   - Read the code to see what was actually implemented
-   - Mark the claim as: `confirmed` (matches code), `divergent` (differs from code in a notable way), `obsolete` (no longer present in code), or `unverifiable` (claim is meta or cannot be directly checked, e.g. "avoid over-engineering")
-   - For `divergent` claims: record both what the source said and what the code shows. The code wins for the wiki page; the divergence may still be valuable as a historical note in `log.md` or as part of an ADR ("considered X, ended up with Y").
-   - For `obsolete` claims: do not create a page. Optionally record in `log.md` as historical context.
+4. **Assess each candidate.** For each candidate:
+   - Check the source materials: was this an accepted decision, or an unfinished discussion?
+   - Consult code on the canonical branch to confirm the decision was a real engineering choice
+   - Mark the candidate as: `accepted` (mature decision, goes to wiki), `unfinished` (no clear decision, skip), or `obsolete` (decision abandoned or replaced — may be skipped or noted as historical context in `log.md`)
+   - If code differs from the decision in some details, that's normal — the wiki captures the decision and its reasoning, not a snapshot of implementation. Note significant divergences in the page if they are part of the decision's history (e.g. "considered X, chose Y").
 
 5. **Propose initial page list.** Before writing any pages, propose to the human a list of pages you intend to create, grouped by type. Each entry should include:
    - Proposed page name (kebab-case)
@@ -182,19 +214,18 @@ Bootstrap is a one-time operation that initializes the wiki from existing materi
    - Severity (suggested)
    - One-line summary
    - Source(s) it will be distilled from
-   - Verification status (confirmed against code, divergent, etc.)
 
 6. **Wait for human approval** of the list. The human may add, remove, or reframe pages. Do not proceed without approval.
 
 7. **Calibrate templates on first 3-4 pages.** Write the first 3-4 pages, choosing variety across types (at least one of each type if possible). After completing them, pause and ask the human to review the format. The human may request adjustments to templates or the way you fill sections. Adjust before continuing.
 
-8. **Complete remaining pages.** After template calibration, write the remaining approved pages. Maintain consistent format across all. **The content of each page must reflect the actual code, not the source materials.** Source materials inform the structure and identify the topic; code informs the content.
+8. **Complete remaining pages.** After template calibration, write the remaining approved pages. Maintain consistent format across all.
 
 9. **Distinguish cross-project from project-scoped.** When the source material is clearly tied to a specific project (e.g., names a project's specific feature, repository, or implementation detail), create the page under `projects/<project-name>/`. When the source describes a general pattern, principle, or pitfall, create it in the root.
 
 10. **Build the index.** After all pages are written, build `index.md` from scratch, grouping by type, with one line per page (see Section 7).
 
-11. **Initialize the log.** Add a single entry to `log.md` marking bootstrap completion, including counts of pages created and notes on any significant divergences between source claims and code reality.
+11. **Initialize the log.** Add a single entry to `log.md` marking bootstrap completion, including counts of pages created and notes on any candidates that were skipped (unfinished or obsolete).
 
 **Important:** Bootstrap may produce 15-25 pages. Distinguish three levels in source material:
 - **Choice of tools / packages / versions** → ADR (preserves alternatives and justification)
@@ -207,7 +238,7 @@ When a source describes a solution, decompose it into these levels. One source c
 
 Ingest is the routine operation of adding new knowledge to the wiki. Triggered by the human, often referencing candidates accumulated in `log.md` or new source materials.
 
-**Source verification still applies.** If the input source is a discussion transcript or memory snapshot, treat it as a hypothesis and verify against current code before writing wiki pages. The source-of-truth hierarchy from Section 1 holds for every ingest, not just bootstrap.
+**Verification still applies.** If the input source is a discussion transcript or memory snapshot, consult code on the canonical branch to confirm decisions are real (not unfinished discussions). Per Principle 7, exact implementation alignment is not required; what matters is that the decision was deliberately accepted.
 
 **Protocol:**
 
@@ -222,7 +253,7 @@ Ingest is the routine operation of adding new knowledge to the wiki. Triggered b
    - Principle candidate (rare; usually emerges through pattern accumulation)
    - Routine application of existing knowledge (no new page; possibly an update to existing page)
 
-3. **Verify against code if applicable.** For claims that can be checked against project code, do so before writing the page. The path to the project code is provided by the human at the start of the operation; do not assume a hardcoded path. If verification is needed but no path was provided, ask before proceeding.
+3. **Verify against canonical branch if applicable.** For claims that can be checked against project code, consult the canonical branch (Section 6.0) to confirm the decision is real and was deliberately accepted. The path and branch are provided by the human at the start of the operation. If verification is needed but no path was provided, ask before proceeding.
 
 4. **For each candidate, check existence in the wiki.** Read `index.md` first to find related pages. If a closely matching page exists:
    - If the new material is a refinement or addition → update the existing page
@@ -235,17 +266,17 @@ Ingest is the routine operation of adding new knowledge to the wiki. Triggered b
 
 7. **Append to `log.md`** an entry recording the ingest action. See Section 8.
 
-8. **For candidates that were processed but produced no page** (because the knowledge already exists, is too thin, or was found to be obsolete against current code), note this in the log entry so the human can see what was reviewed.
+8. **For candidates that were processed but produced no page** (because the knowledge already exists, is too thin, or was an unfinished discussion), note this in the log entry so the human can see what was reviewed.
 
 ### 6.3 Re-ingest
 
-Re-ingest updates existing wiki pages when their underlying source material has changed. Used primarily when project code evolves and a pattern documented from that code is no longer accurate.
+Re-ingest updates existing wiki pages when underlying decisions have evolved (e.g. a previously documented approach has been deliberately superseded by a new one). Note: routine code changes that do not reflect a deliberate decision change do not require re-ingest — per Principle 7, the wiki tracks decisions, not implementation state.
 
 **Protocol:**
 
 1. **Identify the scope.** The human specifies which area to re-ingest (e.g., "player architecture in go_sport changed").
 
-2. **Read the current state.** Examine the current code or source material the human points to. The path to the project code is provided by the human at the start of the operation (e.g., "project: `C:\flutter-projects\go_sport\`, focus on player module"). Do not assume a hardcoded path. If no path was provided, ask before proceeding.
+2. **Read the current state.** Examine the current canonical branch (Section 6.0) or source material the human points to. The path and branch are provided by the human at the start of the operation. If no path was provided, ask before proceeding.
 
 3. **Identify affected pages.** Find pages whose content references or describes the now-changed source. Use `index.md` and `code_refs` in frontmatter to locate them.
 
@@ -307,7 +338,7 @@ The human may directly request a specific page to be created (e.g., "create a pa
    - Whether cross-project or project-scoped
    - The source material (if any) to base the page on
 
-2. **Verify against code if applicable.** Apply the source-of-truth hierarchy from Section 1. If verification against project code is needed, the path is provided by the human at the start of the operation. Do not assume a hardcoded path; ask if not provided.
+2. **Verify against canonical branch if applicable.** Apply the source verification approach from Section 1. If verification against project code is needed, the path and branch are provided by the human at the start of the operation (Section 6.0). Do not assume a hardcoded path; ask if not provided.
 
 3. **Check existence.** Read `index.md` to see if a similar page exists. If so, surface this to the human before proceeding — they may want to update the existing page instead.
 
@@ -396,7 +427,7 @@ For project-scoped content, group entries under `Project-specific knowledge`, wi
 
 ```markdown
 ## [2026-05-11] bootstrap | initial wiki population
-Created 18 pages from bootstrap-sources. 5 principles, 8 patterns, 3 cross-project ADRs, 2 pitfalls. Index built. 3 claims from claude-memory.md were found divergent from current code; pages written to reflect code reality, divergences noted in respective pages. 2 claims were obsolete (no longer in code) and skipped.
+Created 18 pages from bootstrap-sources. 5 principles, 8 patterns, 3 cross-project ADRs, 2 pitfalls. Index built. 2 candidates skipped as unfinished discussions; 1 candidate noted as historical context (decision later abandoned).
 
 ## [2026-05-15] candidate | go_sport | navigation
 Type: pitfall
@@ -450,7 +481,9 @@ The following are mistakes you must not make. They undermine the integrity of th
 
 **Do not write into the wiki without explicit human instruction during routine work.** New knowledge enters through ingest, initiated by the human. The only exception is index and log maintenance, which you do automatically alongside approved page changes.
 
-**Do not write content that contradicts the current code.** If source materials (memory, discussions, specs) describe one thing and code shows another, the wiki must describe what the code shows. The source-of-truth hierarchy from Section 1 is not optional.
+**Do not treat wiki as project documentation.** Wiki captures context (decisions, baseline, principles), not state (current file contents, endpoint lists, screen catalogs, todo items). When a candidate looks like state rather than context, raise it with the human; do not create a page automatically.
+
+**Do not capture unfinished discussions as accepted decisions.** If source materials describe a discussion that did not reach a clear "we decided X" point, do not create a wiki page from it. Per Principle 7 and Section 1, only mature, accepted decisions belong in the wiki.
 
 **Do not silently overwrite contradictions.** When new material contradicts existing pages, flag it. Let the human decide whether the old page is wrong, the new material is wrong, or both should coexist as a recorded evolution.
 
