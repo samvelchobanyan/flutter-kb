@@ -31,6 +31,7 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 - [[local-notifications-stack]] — severity: recommended, applies_to: flutter-projects-with-local-notifications — NotificationService + ReminderStorage + Notifier orchestrator + dumb tile; four-layer separation for scheduled local notifications
 - [[local-state-via-storage-class]] — severity: recommended, applies_to: any-flutter-project — Concrete storage class (in-memory cache + sync getters + async init) for local non-API state; no abstract repository
 - [[parallel-data-loading-with-records]] — severity: flexible, applies_to: any-flutter-project — Dart 3 record .wait to fan out independent repository calls in parallel
+- [[reactive-derived-view]] — severity: recommended, applies_to: any-flutter-project — Per-id heavy view listens to a global light composition and refetches on Set-diff; autoDispose does not solve this
 - [[route-target-self-hydrates-from-id]] — severity: recommended, applies_to: any-flutter-project — Detail screen requires an id and fetches itself; go_router extra is an optional first-paint hint, not a contract
 - [[selector-providers-for-rebuilds]] — severity: recommended, applies_to: any-flutter-project — Narrow Provider<T> selectors over a large Notifier; isolate high-frequency from low-frequency updates
 - [[two-layer-audio-stack]] — severity: recommended, applies_to: flutter-projects-with-playback — PlayerNotifier (state + user API) + AppAudioHandler (just_audio + audio_service infrastructure); two layers, not three
@@ -52,7 +53,10 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 - [[hero-tag-collision-across-shell-branches]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — Same Hero tag in two indexedStack branches asserts on any root-navigator transition
 - [[local-notifications-platform-gotchas]] — severity: required, applies_to: flutter-projects-with-local-notifications — Android core library desugaring requirement (FLN 17+); iOS UNUserNotificationCenter delegate must be registered; vendor battery optimization kills scheduled notifications on Xiaomi/Huawei/Oppo
 - [[modal-in-stateful-shell-route]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — go_router <=14.8.1 singular popRoute navigator lookup breaks system back after a root modal; fix is the upgrade
+- [[repo-side-effects-on-domain-state]] — severity: required, applies_to: any-flutter-project — A repository that pushes results into a state Notifier inverts the layering and hides the mutation from every call site
 
 ## Project-specific knowledge
 
-<no project-scoped pages yet — first project-scoped ADRs will arrive via continuous capture during in-project work>
+### go_sport
+
+- [[projects/go_sport/adr-001-central-like-registry]] — Central LikeRegistry owning full entity lists for six likeable types; library screens become views, repositories stay pure
