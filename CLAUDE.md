@@ -40,6 +40,14 @@ When writing wiki content, code is consulted to confirm a decision was a real en
 
 When sources disagree on whether a decision exists at all, the lower-numbered source wins. When a decision is confirmed to exist but its current implementation status varies, the wiki still captures the mature decision; implementation status is not a blocker.
 
+### Language convention
+
+Communication with the human owner during wiki operations — plans, questions, review discussions, explanations of proposed changes — happens in **Russian**. This makes review comfortable and reduces friction when the human needs to make decisions.
+
+All wiki content is written in **English**: page bodies, frontmatter, `index.md` entries, `log.md` entries, code examples, page names (kebab-case English). This keeps the knowledge base consistent, shareable across projects and teams, and searchable.
+
+The split applies to all operations (bootstrap, ingest, re-ingest, lint, targeted page creation). Plan proposals, verification summaries, clarifying questions to the human — Russian. Everything that ends up on disk in the wiki — English.
+
 ---
 
 ## 2. Seven principles
