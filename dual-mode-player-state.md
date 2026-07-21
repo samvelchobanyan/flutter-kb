@@ -4,7 +4,7 @@ severity: recommended
 status: stable
 applies_to: flutter-projects-with-playback
 keywords: [player-state, playback-mode, music, radio, freezed, sealed, discriminator, queue, mode-switch]
-related: [[two-layer-audio-stack]], [[freezed-immutable-state]]
+related: [[two-layer-audio-stack]], [[freezed-immutable-state]], [[domain-vs-screen-state]], [[collection-play-button-reflects-active-source]], [[player-fast-path-masks-dead-player]]
 code_refs:
   - go_sport/lib/domain/state/player_state.dart
 ---
@@ -89,4 +89,5 @@ A `QueueSource` (sealed Freezed class with variants `album` / `playlist` / `prog
 
 - Clearing the music queue on `playRadio()` — breaks `resumeMusic()`. Keep `tracks`, `currentIndex`, `source` intact; only swap `mode`, `radioTitle`, `radioStreamUrl`.
 - Confusing UI-mode toggle (`MiniPlayerWidget._isMusicMode` — which panel is animated open) with `PlayerState.mode` (what is actually playing). They are independent and may legitimately disagree at moments — see [[domain-vs-screen-state]].
+- Reading that independence as "the UI toggle never reacts to the mode". It should react, on **transitions**: when playback starts in the other mode — the user is on the radio panel and music begins from another screen — the panel should follow. The right tool is `ref.listen` on the discriminator, comparing the local flag to the desired one and flipping only on mismatch (`if (local != desired) toggle()`). Not `ref.watch`: deriving the panel from the mode glues them permanently, so manual toggling becomes impossible, and a `setState` or an animation cannot be triggered during `build` anyway. The flip-on-mismatch guard works precisely because the flag is boolean — for a non-boolean toggle it must become an explicit setter.
 - Letting selectors read across the mode boundary uncritically (`isPlaying && mode == music && tracks.isNotEmpty`) — these compound conditions are best computed as named getters on the state class so the UI doesn't repeat the logic
