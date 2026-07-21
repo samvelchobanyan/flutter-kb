@@ -514,3 +514,23 @@ Why interesting: two-headed trap. (1) Build-time: works until anyone regenerates
 Context: reviewing AnaElez merge "removed news mock" (real Strapi news repo replacing mock). news_state.dart referenced article.likeId / copyWith(likeId:) but news_article.dart has no likeId field; only the generated freezed file was hand-patched. Violates go_sport rule "codegen only via dart run build_runner".
 Source: Claude Code session 2026-07-06, files lib/domain/entities/news_article.dart, lib/domain/entities/news_article.freezed.dart, lib/domain/state/news_state.dart, lib/data/dto/news_dto.dart
 Suggested action: create new pitfall page; cross-reference the freezed/codegen convention page if one exists
+
+## [2026-07-21] ingest | Navigation & Modal — processed 7 candidates
+Thematic ingest covering navigation and modal candidates from 2026-05-12 through 2026-07-04. Verified against `go_sport` branch `dev`. Note: the project lives at `C:\flutter\go_sport`, not the `C:\flutter-projects\go_sport` path assumed in earlier entries.
+
+Created 4 pitfall pages and 1 pattern page:
+- [[modal-in-stateful-shell-route]] — resolves the deferred 2026-05-12 investigation using the 2026-06-01 root-cause finding. Documented as a go_router bug (<=14.8.1 singular `_findCurrentNavigator` in `popRoute`), fixed by upgrading to >=15 / 17.x, not as an app-architecture problem.
+- [[custom-transition-page-breaks-ios-swipe-back]] — from the 2026-06-15 candidate.
+- [[hero-tag-collision-across-shell-branches]] — from the 2026-06-18 candidate.
+- [[full-screen-modal-loses-safe-area-insets]] — from the 2026-07-04 safe-area/modal-overlay candidate.
+- [[route-target-self-hydrates-from-id]] — from the 2026-07-03 navigation candidate, added to this ingest during planning as thematically adjacent.
+
+Updated [[adr-004-go-router-stateful-shell]]: `go_router: ^14.2.0` -> `^17.0.0` (lock resolves 17.2.3 on `dev`). Replaced the "branch navigator keys for modal context resolution / see open investigation" consequence — that investigation is now closed — with consequences linking the three new shell pitfalls. Extended the `state.extra` consequence with a pointer to the id-addressable route pattern. Added a "stay current on the major version" note recording the near-zero 14 -> 17 migration cost and the three breaking changes on that path. `date` left at 2026-05-12: the version bump is a consequence of the original decision, not a new one.
+
+Processed without producing a page:
+- `stateful-shell-with-modal-overlays` (candidate 2026-05-12, paired investigation) — REJECTED as obsolete. The `BranchNavigatorKeyResolver` + `useRootNavigator: false` approach it describes was a workaround for the go_router bug now identified, not an architectural pattern. Confirmed absent from `dev`; all 11 modal call sites use `useRootNavigator: true`. Canonicalizing it would have prescribed a workaround for a bug that no longer exists. The reasoning is preserved in the Fix section of [[modal-in-stateful-shell-route]] as an explicit "do not do this".
+- A go_router upgrade ADR under `projects/go_sport/` was considered and declined — the bump is a forced fix for a framework bug, not a choice between alternatives, and is fully covered by the pitfall page plus the adr-004 update.
+
+Verification findings on `dev`: `BranchNavigatorKeyResolver` absent; `MediaQueryData.fromView` reinjection used at all 4 full-screen sheet entry points; `fadeSlidePage` defined in `page_transitions.dart` but with zero call sites (all routes reverted to `builder:`/MaterialPage); no Flutter `Hero` widgets remain (the `*Hero` classes are the project's own header-section widgets, not shared-element heroes). Per Principle 7 the pitfall pages capture the traps and their canonical fixes regardless of current implementation state.
+
+Navigation-adjacent candidates deliberately left for later thematic ingests: 2026-06-19 `guest-session-limit` (gating belongs in a router redirect backed by long-lived state — better ingested together with the two other guest candidates as an auth/guest-session theme) and 2026-06-15 `layout` (ListView with `padding == null` auto-injecting `MediaQuery.padding` — safe-area-adjacent but a layout concern).
