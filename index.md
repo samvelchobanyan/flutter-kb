@@ -25,6 +25,7 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 
 - [[api-client-with-config-and-interceptors]] — severity: recommended, applies_to: any-flutter-project — ApiClient wraps Dio, takes AppConfig + interceptor list at construction; env selection via --dart-define=ENV
 - [[async-init-provider-override]] — severity: recommended, applies_to: any-flutter-project — Provider<T>(throw) declaration + ProviderScope.overrides for infrastructure that needs await init()
+- [[background-image-bottom-card-form]] — severity: recommended, applies_to: any-flutter-project — Full-bleed image over a bottom form card that survives keyboard and short screens; IntrinsicHeight makes Spacer legal in a scroll view
 - [[collection-play-button-reflects-active-source]] — severity: recommended, applies_to: flutter-projects-with-playback — Collection header play button keys on queue-source identity, not track membership; two booleans, not one
 - [[dual-mode-player-state]] — severity: recommended, applies_to: flutter-projects-with-playback — Single PlayerState with PlaybackMode discriminator; switching modes preserves the other mode's queue
 - [[event-stream-vs-state-for-discrete-events]] — severity: recommended, applies_to: any-flutter-project — Discrete events (notification taps, deep links) as Stream + StreamProvider, not StateProvider — avoids stale-state and dedup pitfalls
@@ -52,13 +53,19 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 ## Pitfalls
 
 - [[audio-error-recovery]] — severity: required, applies_to: flutter-projects-with-just-audio — Reentrancy, duplicate error events, and native auto-advance make naive skip-on-error harmful; branch on the failed index
+- [[constant-value-drift-on-rename]] — severity: required, applies_to: any-flutter-project — Reassigning a named constant's value in place silently retargets every call site; rename usages first, redefine second
 - [[custom-transition-page-breaks-ios-swipe-back]] — severity: required, applies_to: flutter-projects-with-go-router-custom-transitions — CustomTransitionPage has no Cupertino back-gesture; the discriminator is page type, not screen
+- [[dual-source-of-truth-state]] — severity: required, applies_to: any-flutter-project — One concept mirrored in a Notifier and a backing store; a write to only one drifts, disguised as a platform/timing bug
 - [[full-screen-modal-loses-safe-area-insets]] — severity: required, applies_to: any-flutter-project — Only MediaQueryData.fromView survives the sheet's removePadding; copying parent MediaQuery and reading viewPadding both fail
 - [[hero-tag-collision-across-shell-branches]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — Same Hero tag in two indexedStack branches asserts on any root-navigator transition
+- [[image-cache-dims-distort-aspect-ratio]] — severity: required, applies_to: any-flutter-project — Both cacheWidth and cacheHeight decode to exact pixels and drop aspect ratio; BoxFit.cover cannot fix an already-distorted bitmap
+- [[listview-null-padding-consumes-safe-area]] — severity: required, applies_to: any-flutter-project — A ListView with null padding injects MediaQuery.padding; a sibling of a SafeArea eats the top inset twice
 - [[local-notifications-platform-gotchas]] — severity: required, applies_to: flutter-projects-with-local-notifications — Android core library desugaring requirement (FLN 17+); iOS UNUserNotificationCenter delegate must be registered; vendor battery optimization kills scheduled notifications on Xiaomi/Huawei/Oppo
 - [[modal-in-stateful-shell-route]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — go_router <=14.8.1 singular popRoute navigator lookup breaks system back after a root modal; fix is the upgrade
 - [[player-fast-path-masks-dead-player]] — severity: required, applies_to: flutter-projects-with-playback — "Same source, just seek" assumes a live player and a matching queue; optimistic UI hides both failures
 - [[repo-side-effects-on-domain-state]] — severity: required, applies_to: any-flutter-project — A repository that pushes results into a state Notifier inverts the layering and hides the mutation from every call site
+- [[shared-dto-partial-populate]] — severity: required, applies_to: flutter-projects-with-strapi — One DTO hydrated by endpoints with divergent populate sets under-hydrates silently into falsy defaults; keep populate in sync
+- [[strapi-oauth-provider-email-conflict]] — severity: required, applies_to: flutter-projects-with-strapi-users-permissions-oauth — Bundled OAuth callback rejects an email already registered as provider=local with 400; needs a linking policy, not a client fix
 
 ## Project-specific knowledge
 

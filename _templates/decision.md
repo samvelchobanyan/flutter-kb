@@ -1,7 +1,7 @@
 ---
 type: decision
 severity: required
-status: accepted
+status: stable
 date: <YYYY-MM-DD>
 applies_to: <scope, e.g. any-flutter-project or project: go_sport>
 keywords: []

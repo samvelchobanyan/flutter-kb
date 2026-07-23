@@ -33,6 +33,8 @@ Tokens also enable theme variants (dark mode, brand variations) without touching
 - For colors with opacity, prefer `DSColors.gray60` (semantic grayscale) over `DSColors.black.withOpacity(0.6)` when a matching grayscale token exists
 - New visual values get added to the appropriate token class, not hardcoded at the call site. If the design uses a new color/spacing, the token gets added first, then used.
 - Higher-level components (in `design_system/components/`) are tokens at a higher level — reuse them instead of rebuilding common shapes (`DSNotificationIcon`, `DSWaveIcon`, etc.)
+- Name a scale by its density, per scale, not globally. T-shirt names (`xs`/`s`/`m`/`l`) stay legible up to roughly 5–6 values; past that they break down — you end up inventing `xsm`/`sm` or quietly shifting what an existing name means. When a scale is denser than that, switch that scale to numeric value-named tokens (`s16`/`s20`/…). The choice is made per scale: one scale can be t-shirt while another is numeric.
+- Keep the spacing rhythm scale separate from functional layout metrics. A value belongs in the spacing scale only if it is a general rhythm reused across unrelated contexts. A value tied to one component or purpose — clearance under a bottom bar, a hero's content offset over an overlapping sheet — belongs in its own named constant, even when it appears more often than scale values do. The test is generality of context, not frequency: a frequent but single-purpose value is not a rhythm token, and putting it in the scale both hides its intent and dilutes the scale's constraining job.
 
 ## When this principle does NOT apply
 

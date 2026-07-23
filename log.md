@@ -584,3 +584,38 @@ Candidate status notes:
 - 2026-06-10 `collection-play-pause-toggle (correction)` likewise folded into the pattern page rather than becoming a separate embedded pitfall.
 
 Still pending from earlier proposals: 2026-07-02 `riverpod-lazy-global-read`.
+
+## [2026-07-21] ingest | Design system & tokens — processed 4 candidates
+Thematic ingest of the four 2026-06-12 go_sport design-system candidates. Verified against `dev` at `C:\flutter\go_sport` (DSIconSize numeric scale, DSRadius.xxl=28, DSLayout.bottomBarClearance/heroContentBottom all present and in use). Scope was deliberately kept to transferable principles only — the wiki does not document the design system itself or the project's specific scales, which are design-driven project specifics.
+
+All four 2026-06-12 candidates are now processed:
+- `design-system (per-scale naming)` — folded into [[design-system-tokens-mandatory]] as one Implications bullet: the transferable heuristic only (t-shirt names stay legible to ~5–6 values, switch a denser scale to numeric value-named tokens, chosen per scale). The project's concrete scales, values, and renames were deliberately left out.
+- `design-system (functional layout metrics)` — folded into [[design-system-tokens-mandatory]] as one Implications bullet: separate the rhythm scale from functional layout metrics, the criterion being generality of context rather than frequency. The concrete DSLayout class and its values were left out.
+- `refactoring-safety (token rename)` — created [[constant-value-drift-on-rename]], reframed wider than "token rename" to any named-constant refactor (reassigning a constant's value in place silently retargets every call site; rename usages first, redefine second, grep to confirm). Design-token scales appear as the leading example inside the page, not as the page's frame.
+- `refactoring-safety (mass migration gotchas)` — REJECTED, no page. Recorded here as a precedent for future similar candidates: **operational details of one specific migration vs transferable architectural knowledge.** The candidate's content (regex forms like `\b16\b` matching inside `16.0`, EdgeInsets named-vs-positional shapes, SizedBox gap-vs-size disambiguation, PowerShell/Windows-1252 encoding traps) is procedure for executing one literal→token migration on one codebase. It is real and was useful, but it is not knowledge that transfers as a principle to the next project — its scope is a single task, not a class of decisions. When a candidate is a how-to for one migration run rather than a rule that outlives it, it does not earn a page.
+
+One update ([[design-system-tokens-mandatory]], two Implications bullets) and one new page ([[constant-value-drift-on-rename]]). No project ADR, no pattern page — the compact filter for this theme.
+
+Checked for adjacent candidates and deliberately left them for later themes: 2026-06-23 `unified-network-image-fallback` (a DS component, not a token/naming concern) and 2026-06-18 `background-image-bottom-card-form` (a layout idiom). Neither is in scope for design-system tokens.
+
+## [2026-07-21] ingest | Auth + Data + Layout — processed 6 candidates, 2 folds
+Thematic ingest across auth, data-hydration, and layout candidates from 2026-05-26 through 2026-07-01. Verified against `dev` at `C:\flutter\go_sport`. Several fixes are already applied on `dev` (album populate synced with playlist populate; `my_artists`/`new_episodes` lists now carry explicit padding; cache-dims removed from expired_guest) — per Principle 7 the pitfall pages capture the trap and its fix regardless of current implementation state.
+
+Created 5 pitfall pages and 1 pattern page:
+- [[strapi-oauth-provider-email-conflict]] (pitfall) — from 2026-05-26. Generalized across all bundled Strapi `users-permissions` OAuth providers, not just Google; framed as a server-side product/linking decision rather than a client bug.
+- [[dual-source-of-truth-state]] (pitfall) — from 2026-06-19 `dual-source-of-truth-guest-state`, deliberately raised to a general architectural pitfall: one concept mirrored in a Notifier and a backing store, a write to only one drifts, mutations must go through the owner. Guest mode is the worked example inside the page, including the diagnostic signal (a correct owner-method with zero call sites).
+- [[shared-dto-partial-populate]] (pitfall, FOLD) — merged 2026-06-16 and 2026-07-01. Kept compact: symptom + cause + fix, with the per-widget-fallback-masking factor as a single aggravating sentence rather than a second section.
+- [[background-image-bottom-card-form]] (pattern, FOLD) — merged 2026-06-09 and 2026-06-18. The 06-09 candidate gave the formula and the content-driven vs fixed-height fork; 06-18 added keyboard survival (resizeToAvoidBottomInset + overlap, IntrinsicHeight making Spacer legal in a scroll view) and alignment-controls-crop, plus the broken fixed-percent variant as a contrast pitfall.
+- [[listview-null-padding-consumes-safe-area]] (pitfall) — from 2026-06-15.
+- [[image-cache-dims-distort-aspect-ratio]] (pitfall) — from 2026-06-19.
+
+No project ADR and no updates to existing pages, by design — the theme was scoped to new transferable pages only.
+
+Rejected (recorded with explicit reasons):
+- 2026-06-19 `guest-session-limit` — too narrow. A transferable kernel exists ("do not gate time-based access through ephemeral widget state; gating belongs in a router redirect backed by long-lived state"), but the candidate's substance is tied to go_sport's specific StatefulShellRoute structure and does not carry to a standalone page on its own.
+- 2026-06-19 `guest-choice-is-per-session` — a product decision (go_sport's freemium logic), not an architectural one. Another project could choose the opposite based on its business model, so it is project-scoped precedent at most, not cross-project knowledge. If captured at all it would be a go_sport ADR, not a wiki principle.
+
+Deferred to the next ingest (not rejected):
+- 2026-07-02 `exif-orientation-not-baked` — considered for this theme's "images" scope and held back to keep it paired with the 2026-07-02 `image-orientation-package` ADR (the `image` vs `flutter_image_compress` package choice) in Ingest 6. Splitting the pair across sessions would lose the natural "pitfall → chosen fix" link and the cross-page linking between them. The images angle here is already covered by [[background-image-bottom-card-form]] and [[image-cache-dims-distort-aspect-ratio]], neither of which is about EXIF.
+
+Still pending from earlier proposals: 2026-07-02 `riverpod-lazy-global-read`.
