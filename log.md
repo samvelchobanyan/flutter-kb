@@ -619,3 +619,26 @@ Deferred to the next ingest (not rejected):
 - 2026-07-02 `exif-orientation-not-baked` — considered for this theme's "images" scope and held back to keep it paired with the 2026-07-02 `image-orientation-package` ADR (the `image` vs `flutter_image_compress` package choice) in Ingest 6. Splitting the pair across sessions would lose the natural "pitfall → chosen fix" link and the cross-page linking between them. The images angle here is already covered by [[background-image-bottom-card-form]] and [[image-cache-dims-distort-aspect-ratio]], neither of which is about EXIF.
 
 Still pending from earlier proposals: 2026-07-02 `riverpod-lazy-global-read`.
+
+## [2026-07-21] ingest | Images + State + Architecture — final ingest of the series
+Final thematic ingest. Verified against `dev` at `C:\flutter\go_sport`. After this pass the log has no unprocessed candidates — every candidate is either turned into a page, folded into one, or explicitly rejected with a reason. A full audit of all candidate entries was performed as part of this ingest (see the closeout below).
+
+Created 6 pages:
+- [[unified-network-image-fallback]] (pattern) — from 2026-06-23. Boundaries kept explicit: avatars (own SVG-placeholder semantics), local `Image.asset` (network-only widget), and `BoxDecoration`/`DecorationImage` (decoration, not child) are deliberately excluded.
+- [[centralized-network-error-notification]] (pattern) — from 2026-07-04 `network error notification`. Records the control-flow-vs-notification split, the never-swallow (`handler.next`) rule, the non-GET method filter, and the event-stream-not-state choice that dodges same-value dedup.
+- [[exif-orientation-not-baked]] (pitfall) — from 2026-07-02. Deferred from Ingest 5 specifically to keep it paired with the ADR below; the pairing is now in place with two-way cross-links.
+- [[non-exhaustive-loading-guard]] (pitfall) — from 2026-05-17.
+- [[riverpod-lazy-global-read]] (pitfall) — from 2026-07-02, pending since Ingest 2, now closed.
+- [[projects/go_sport/adr-003-image-orientation-package]] (project ADR) — from 2026-07-02 `image-orientation-package`. Number is adr-003, the next free number in `projects/go_sport/` (adr-001 like registry, adr-002 persist player); the task's suggested "adr-004" was corrected after verifying the directory. Records the pure-Dart `image` choice, the rejected native `flutter_image_compress` alternative, and the revisit-if-image-processing-broadens condition. Paired two-way with [[exif-orientation-not-baked]] (ADR = the chosen solution, pitfall = the problem).
+
+Processed without creating a page (3):
+- 2026-05-12 `canonical-branch-for-wiki-operations` — a curation-methodology candidate whose suggested action was to add a canonical-branch section to CLAUDE.md. Already done: CLAUDE.md §6.0 "Canonical project branch" exists. No wiki page — it is curation methodology, not Flutter engineering knowledge.
+- 2026-05-12 `worktree-vs-main-checkout-invisibility` — out of scope. A pitfall about Claude Code Desktop worktree behaviour (`applies_to: workflows-using-claude-code-desktop`); it is neither Flutter engineering knowledge nor wiki-curation methodology, so it does not belong in this knowledge base.
+- 2026-05-12 `spec-vs-code-divergence-statenotifier` — a project-doc concern (align go_sport's ARCHITECTURE_SPEC.md, which shows `StateNotifier`, with the code, which uses `Notifier`), not wiki content. The wiki already canonicalizes `Notifier` explicitly in [[domain-vs-screen-state]], so the knowledge is captured; the remaining action is on the project's spec.
+
+Rejected during the final audit (3) — these were never logged as processed but had been discussed earlier in series planning; recording the rejections here closes them:
+- 2026-06-13 `external-links` — no ADR. It records the choice of a standard package (`url_launcher`) with no alternatives weighed and no trade-off; that is documentation of state ("we use url_launcher"), not an architectural decision. The "no abstraction for a single call site" judgment it also carries is already implicit in the wiki's avoid-over-engineering stance.
+- 2026-06-17 `story-viewer` — no pattern. Its transferable core (screen controllers are for data/async; vsync/ticker + ephemeral session state live in widget `State`) is already canonicalized as principle in [[domain-vs-screen-state]]. The concrete Instagram-style story viewer is go_sport UI specifics, not transferable architecture.
+- 2026-07-06 `freezed` (hand-edited generated file) — no pitfall. It is a developer mistake (someone bypassed the codegen workflow), not an architectural lesson. "Do not hand-edit generated files" is baseline Flutter/Freezed knowledge and does not warrant a page.
+
+Series closeout: all candidates from 2026-05-12 through 2026-07-06 are now accounted for across Ingests 1–6. Nothing remains deferred or pending. The log is a clean audit trail with no open items.

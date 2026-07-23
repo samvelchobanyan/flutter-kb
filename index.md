@@ -26,6 +26,7 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 - [[api-client-with-config-and-interceptors]] — severity: recommended, applies_to: any-flutter-project — ApiClient wraps Dio, takes AppConfig + interceptor list at construction; env selection via --dart-define=ENV
 - [[async-init-provider-override]] — severity: recommended, applies_to: any-flutter-project — Provider<T>(throw) declaration + ProviderScope.overrides for infrastructure that needs await init()
 - [[background-image-bottom-card-form]] — severity: recommended, applies_to: any-flutter-project — Full-bleed image over a bottom form card that survives keyboard and short screens; IntrinsicHeight makes Spacer legal in a scroll view
+- [[centralized-network-error-notification]] — severity: recommended, applies_to: any-flutter-project — Dio interceptor maps errors to an app enum and pushes non-GET failures to one root SnackBar via an event stream; never swallows
 - [[collection-play-button-reflects-active-source]] — severity: recommended, applies_to: flutter-projects-with-playback — Collection header play button keys on queue-source identity, not track membership; two booleans, not one
 - [[dual-mode-player-state]] — severity: recommended, applies_to: flutter-projects-with-playback — Single PlayerState with PlaybackMode discriminator; switching modes preserves the other mode's queue
 - [[event-stream-vs-state-for-discrete-events]] — severity: recommended, applies_to: any-flutter-project — Discrete events (notification taps, deep links) as Stream + StreamProvider, not StateProvider — avoids stale-state and dedup pitfalls
@@ -36,6 +37,7 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 - [[persist-and-restore-playback-session]] — severity: recommended, applies_to: flutter-projects-with-playback — Snapshot plus separate position key; periodic position saves; restore-or-prime paused on cold start
 - [[reactive-derived-view]] — severity: recommended, applies_to: any-flutter-project — Per-id heavy view listens to a global light composition and refetches on Set-diff; autoDispose does not solve this
 - [[system-player-artwork-fallback]] — severity: recommended, applies_to: flutter-projects-with-playback — MediaItem.artUri reads only http/file; materialize the asset to a file and guard the chain by scheme
+- [[unified-network-image-fallback]] — severity: recommended, applies_to: any-flutter-project — One dumb DSNetworkImage collapses loading/error/null-url into a shared placeholder; avatars, local assets, decorations stay out
 - [[route-target-self-hydrates-from-id]] — severity: recommended, applies_to: any-flutter-project — Detail screen requires an id and fetches itself; go_router extra is an optional first-paint hint, not a contract
 - [[selector-providers-for-rebuilds]] — severity: recommended, applies_to: any-flutter-project — Narrow Provider<T> selectors over a large Notifier; isolate high-frequency from low-frequency updates
 - [[two-layer-audio-stack]] — severity: recommended, applies_to: flutter-projects-with-playback — PlayerNotifier (state + user API) + AppAudioHandler (just_audio + audio_service infrastructure); two layers, not three
@@ -56,12 +58,15 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 - [[constant-value-drift-on-rename]] — severity: required, applies_to: any-flutter-project — Reassigning a named constant's value in place silently retargets every call site; rename usages first, redefine second
 - [[custom-transition-page-breaks-ios-swipe-back]] — severity: required, applies_to: flutter-projects-with-go-router-custom-transitions — CustomTransitionPage has no Cupertino back-gesture; the discriminator is page type, not screen
 - [[dual-source-of-truth-state]] — severity: required, applies_to: any-flutter-project — One concept mirrored in a Notifier and a backing store; a write to only one drifts, disguised as a platform/timing bug
+- [[exif-orientation-not-baked]] — severity: required, applies_to: any-flutter-project — Camera rotation lives in EXIF, honored in preview but stripped on backend re-encode; bake into pixels before upload
 - [[full-screen-modal-loses-safe-area-insets]] — severity: required, applies_to: any-flutter-project — Only MediaQueryData.fromView survives the sheet's removePadding; copying parent MediaQuery and reading viewPadding both fail
 - [[hero-tag-collision-across-shell-branches]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — Same Hero tag in two indexedStack branches asserts on any root-navigator transition
 - [[image-cache-dims-distort-aspect-ratio]] — severity: required, applies_to: any-flutter-project — Both cacheWidth and cacheHeight decode to exact pixels and drop aspect ratio; BoxFit.cover cannot fix an already-distorted bitmap
 - [[listview-null-padding-consumes-safe-area]] — severity: required, applies_to: any-flutter-project — A ListView with null padding injects MediaQuery.padding; a sibling of a SafeArea eats the top inset twice
 - [[local-notifications-platform-gotchas]] — severity: required, applies_to: flutter-projects-with-local-notifications — Android core library desugaring requirement (FLN 17+); iOS UNUserNotificationCenter delegate must be registered; vendor battery optimization kills scheduled notifications on Xiaomi/Huawei/Oppo
 - [[modal-in-stateful-shell-route]] — severity: required, applies_to: flutter-projects-with-stateful-shell-route — go_router <=14.8.1 singular popRoute navigator lookup breaks system back after a root modal; fix is the upgrade
+- [[non-exhaustive-loading-guard]] — severity: required, applies_to: any-flutter-project — `isLoading && data == null` spinner guard then `data!` crashes on the initial frame and after errors; gate every null case
+- [[riverpod-lazy-global-read]] — severity: required, applies_to: any-flutter-project — Gating a load on `.isEmpty` of a global that merges sources with different timings leaves a partial snapshot forever
 - [[player-fast-path-masks-dead-player]] — severity: required, applies_to: flutter-projects-with-playback — "Same source, just seek" assumes a live player and a matching queue; optimistic UI hides both failures
 - [[repo-side-effects-on-domain-state]] — severity: required, applies_to: any-flutter-project — A repository that pushes results into a state Notifier inverts the layering and hides the mutation from every call site
 - [[shared-dto-partial-populate]] — severity: required, applies_to: flutter-projects-with-strapi — One DTO hydrated by endpoints with divergent populate sets under-hydrates silently into falsy defaults; keep populate in sync
@@ -73,3 +78,4 @@ For project-scoped ADRs, entries are grouped under "Project-specific knowledge" 
 
 - [[projects/go_sport/adr-001-central-like-registry]] — Central LikeRegistry owning full entity lists for six likeable types; library screens become views, repositories stay pure
 - [[projects/go_sport/adr-002-persist-player-session]] — Music session persisted over two SharedPreferences keys; restore-or-prime lands paused, radio never persisted
+- [[projects/go_sport/adr-003-image-orientation-package]] — Pure-Dart `image` over native `flutter_image_compress` for baking EXIF orientation; zero native surface for one infrequent avatar
