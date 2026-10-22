@@ -642,3 +642,120 @@ Rejected during the final audit (3) — these were never logged as processed but
 - 2026-07-06 `freezed` (hand-edited generated file) — no pitfall. It is a developer mistake (someone bypassed the codegen workflow), not an architectural lesson. "Do not hand-edit generated files" is baseline Flutter/Freezed knowledge and does not warrant a page.
 
 Series closeout: all candidates from 2026-05-12 through 2026-07-06 are now accounted for across Ingests 1–6. Nothing remains deferred or pending. The log is a clean audit trail with no open items.
+
+## [2026-07-27] candidate | go_sport | text-scaling
+Type: pattern
+Target applies_to: any-flutter-project
+What: Lock (or clamp) OS font-size accessibility scaling at the app root via MaterialApp `builder` using MediaQuery.withNoTextScaling / MediaQuery.withClampedTextScaling, not the deprecated textScaleFactor.
+Why interesting: General Flutter technique with a non-obvious gotcha — an app can have multiple MaterialApp roots (main router, offline screen, init-error fallback), and EACH needs the builder or scaling leaks through on those screens. Also carries the accessibility trade-off: full noTextScaling is a regression vs clamping; record both so the choice is explicit.
+Context: System font enlargement was breaking go_sport's layout. Chose full lock (withNoTextScaling) as the first step via a shared _lockTextScale helper applied to all three MaterialApp instances; may switch to clamped scaling later once a safe max is measured.
+Source: Claude Code session 2026-07-27, file lib/main.dart
+Suggested action: create new pattern page
+
+## [2026-08-03] candidate | go_sport | playback
+Type: pitfall
+Target applies_to: flutter-projects-with-playback
+What: A track-tile tap handler that calls playQueue unconditionally restarts the current track instead of pausing it — the "same source, just skip" fast path resolves to seek(Duration.zero, index: sameIndex), which is a rewind, not a toggle.
+Why interesting: General trap, and it hides behind a correct-looking implementation. The tile already renders a play/pause equalizer indicator, so users read it as a play/pause control; the handler has no matching fork. The failure is silent — no error, audible playback continues, only the position jumps to 0 — so it survives casual testing. Related page [[collection-play-button-reflects-active-source]] covers the same fork for the collection HEADER button but explicitly scopes its criterion to queue-source identity; the tile needs the weaker per-item criterion (currentTrack.id == track.id), so the existing page does not cover this case and its "two booleans" reasoning does not transfer directly.
+Context: Reported in go_sport search results — second tap on a playing track restarts it. Diagnosis showed the gap is not search-specific: seven track-list screens (album, playlist, my_favorites, new_episodes, artist, program_details, radio_page) all call playQueue unconditionally from the tile tap; only add_tracks_bottom_sheet has the toggle fork. Header play buttons on the same screens DO have the fork, which is what makes the tile omission easy to miss.
+Source: Claude Code session 2026-08-03, files lib/features/search/presentation/search/search_screen.dart (_TrackRow), lib/domain/state/player_state.dart (playQueue), lib/core/audio/app_audio_handler.dart (skipToQueueItem)
+Suggested action: create new pitfall page, cross-linked with [[collection-play-button-reflects-active-source]] (header vs tile: same fork, different criterion) and [[player-fast-path-masks-dead-player]] (the fast path is what converts the missing fork into a rewind)
+
+## [2026-10-21] candidate | GastroSuit | wiki-versions
+Type: principle
+Target applies_to: wiki-wide
+What: Principle and pattern pages should not pin library versions or version-specific APIs; versions belong to project pubspecs and to ADRs only.
+Why interesting: Version-pinned content goes stale silently and then misleads. Examples found: [[domain-vs-screen-state]] and [[adr-001-riverpod-for-state-management]] name `AutoDisposeNotifier` (removed in Riverpod 3, now a provider modifier); [[freezed-immutable-state]] shows `@freezed class X with _$X`, which does not compile in Freezed 3 (classes must be `abstract` or `sealed`). The same staleness already hit go_sport's ARCHITECTURE_SPEC (StateNotifier template while code used Notifier).
+Context: Writing GastroSuit's ARCHITECTURE_SPEC from scratch; decided the spec carries no code and no versions, and the user asked for the same discipline in the wiki.
+Source: Claude Code session 2026-10-21
+Suggested action: update [[adr-001-riverpod-for-state-management]] (Riverpod 3 is current; re-evaluation condition met), [[domain-vs-screen-state]], [[freezed-immutable-state]] — strip version-specific API names or mark examples as version-bound
+
+## [2026-10-21] candidate | GastroSuit | shared-widgets-placement
+Type: principle
+Target applies_to: any-flutter-project
+What: Reusable widgets live in two places, not three: `design_system/components/` (domain-agnostic, plain-value props) and `features/shared_widgets/` (domain-aware, dumb). Domain-agnostic helpers like `EqualizerIndicator` go to the design system; `shared/widgets/` is dropped.
+Why interesting: In go_sport `shared/widgets/` held a single file and its boundary with `design_system/components/` was undefined; the deciding axis is "knows the domain or not", which yields exactly two places. Also: placement follows consumers (screen → feature → shared_widgets), moving up only when a new consumer appears; the design handoff's component list does not decide placement.
+Context: Defining reusable-widget rules for GastroSuit's spec.
+Source: Claude Code session 2026-10-21, C:\flutter\gastro_suit\docs\ARCHITECTURE_SPEC.md §8
+Suggested action: update [[layered-architecture]]; cross-link [[shared-widgets-stay-dumb]]
+
+## [2026-10-21] candidate | GastroSuit | dto-without-freezed
+Type: decision
+Target applies_to: any-flutter-project
+What: DTOs use json_serializable on plain classes, without Freezed; Freezed stays for entities and state classes.
+Why interesting: A DTO lives for one parse-and-map; Freezed's `==`/`copyWith` are never used there and double the generated code. The value of codegen for DTOs is generated `fromJson` (no key typos, typed failures at parse time, nested objects, `fieldRename`). go_sport ignored the ADR entirely and hand-wrote all DTOs (likely because of Strapi nesting), so the ADR did not reflect practice either.
+Context: GastroSuit spec discussion; final confirmation pending a look at the Swagger response shapes.
+Source: Claude Code session 2026-10-21
+Suggested action: update [[adr-003-freezed-for-models]] and [[dto-to-domain-mapping]]
+
+## [2026-10-21] candidate | GastroSuit | state-ownership-refinements
+Type: principle
+Target applies_to: any-flutter-project
+What: Three refinements to the consumer-count rule: (1) the real prohibition is a stored copy of domain data in a controller, not data passing through it — a controller may derive (filter, sort, combine) from domain state via watch; (2) data obviously shared from the start (cart, user, session) goes to domain state immediately, consumer counting is for unclear cases; (3) lifetime is a separate axis from placement — "don't refetch on re-entry" is solved by provider lifetime (autoDispose or not), not by promoting to domain state.
+Why interesting: The current blanket "MUST NOT proxy" forbids legitimate derived views; go_sport's favorites controllers show the harmless-but-pointless pass-through case, while the harmful case is a ref.read copy that drifts ([[dual-source-of-truth-state]]).
+Context: Rewriting the state section of GastroSuit's spec.
+Source: Claude Code session 2026-10-21; go_sport lib/features/favorites/presentation/my_albums/my_albums_controller.dart
+Suggested action: update [[domain-vs-screen-state]]; cross-link [[dual-source-of-truth-state]], [[reactive-derived-view]]
+
+## [2026-10-21] candidate | GastroSuit | error-presentation
+Type: pattern
+Target applies_to: any-flutter-project
+What: Separate the architectural part of error handling (one app-level `AppException`, created only at the network boundary; the receiver decides recovery) from presentation (SnackBar / dialog / inline), which is a per-case design decision and not part of the architecture.
+Why interesting: go_sport had no app error type: `DioException` leaked into domain state and controllers, and Strapi error-body parsing was duplicated in three places. Conversely, adopting [[centralized-network-error-notification]] by default pre-decides UX before the design is known.
+Context: GastroSuit spec errors section.
+Source: Claude Code session 2026-10-21; go_sport lib/domain/state/notifications_state.dart, change_password_controller.dart, confirm_delete_controller.dart
+Suggested action: create new pattern page (app-level exception at the network boundary); add a "not by default — presentation is a design decision" note to [[centralized-network-error-notification]]
+
+## [2026-10-21] candidate | GastroSuit | feature-folder-template
+Type: pattern
+Target applies_to: any-flutter-project
+What: One feature folder template: `features/<feature>/presentation/<screen>/{<screen>_screen, <screen>_controller (optional), widgets/}` plus `<feature>/presentation/widgets/`; multi-step flows are one feature with one folder per step (no sub-features); a complex widget may have its own controller next to it; sheets and dialogs follow the same placement.
+Why interesting: Without an explicit template go_sport drifted into four layouts (~20 screens on the template, 8 with an extra sub-feature level, 12 flat files, 1 without presentation), mostly in multi-screen flows like auth. go_sport's `home` feature is the clean reference.
+Context: GastroSuit spec features section.
+Source: Claude Code session 2026-10-21; go_sport lib/features/
+Suggested action: create new pattern page or merge into [[layered-architecture]]
+
+## [2026-10-21] candidate | GastroSuit | provider-placement
+Type: principle
+Target applies_to: any-flutter-project
+What: A provider is declared next to the class it provides; only interface→implementation bindings (repositories) are collected in `core/di/`. The resulting domain → core/di → data import chain is accepted rather than removed with override ceremony.
+Why interesting: "All infrastructure providers in core/di" (go_sport spec) was too broad and was not followed in code (6 providers next to their classes), for good reason. The remaining transitive import is compile-level only; removing it costs a list of overrides in main for no behavioural gain.
+Context: GastroSuit spec DI section.
+Source: Claude Code session 2026-10-21
+Suggested action: update [[layered-architecture]] (Implications) and/or [[async-init-provider-override]]
+
+## [2026-10-21] candidate | GastroSuit | string-route-literals
+Type: pitfall
+Target applies_to: flutter-projects-with-go-router
+What: Route paths written as string literals in features drift from the router: go_sport has ~98 `context.push` / `context.go` literals vs 14 uses of route constants, and Home pushes `/album/$id` while the route only exists under `/music/album/:id`.
+Why interesting: Nested shell routes make full paths non-obvious; a literal with a wrong prefix compiles and fails only at runtime on that tap. Referencing routes through constants or builder functions prevents it.
+Context: go_sport code survey while writing GastroSuit's navigation rules.
+Source: Claude Code session 2026-10-21; go_sport lib/features/home/presentation/home/home_screen.dart:42-48, lib/core/navigation/routes.dart
+Suggested action: create new pitfall page
+
+## [2026-10-21] candidate | GastroSuit | localization-from-day-one
+Type: principle
+Target applies_to: flutter-projects-with-multiple-languages
+What: For multi-language apps, localization is structural from the first screen: all UI strings from ARB (gen-l10n), selected language is persisted app state, backend content language is sent by an interceptor rather than per repository.
+Why interesting: Retrofitting means extracting literals from every screen; the locale header is a cross-cutting request concern that belongs with the other interceptors. Not covered by the wiki at all.
+Context: GastroSuit has several languages.
+Source: Claude Code session 2026-10-21
+Suggested action: create new principle page
+
+## [2026-10-21] candidate | GastroSuit | spec-documents
+Type: principle
+Target applies_to: any-flutter-project
+What: A project architecture spec states structure and rules only — no code templates, no library versions, rules phrased positively and kept only if they prevent a concrete problem; a "deviations from the knowledge base" table records where and why the project departs from the wiki.
+Why interesting: go_sport's spec matched its own code only ~60% after a few months; the stale parts were exactly the code templates and implementation details, while the layer structure held up. Earlier entry `spec-vs-code-divergence-statenotifier` was closed as a project-doc concern; this generalizes it.
+Context: Rewriting the spec for GastroSuit based on go_sport's.
+Source: Claude Code session 2026-10-21, C:\flutter\gastro_suit\docs\ARCHITECTURE_SPEC.md
+Suggested action: create new principle page (or a curation note if out of scope)
+
+## [2026-10-21] candidate | GastroSuit | Claude Design handoff carries stale values next to live ones
+Type: pitfall
+Target applies_to: any-flutter-project
+What: A Claude Design "send to Claude Code" bundle contains several older snapshots of the same tokens/components/screens (export/, handover/*, design_handoff_*/, components/*.json) plus CSS `var(--token, fallback)` fallbacks from earlier palettes; only the files imported by the live screens (`project/_ds/*` + `*.dc.html`) are current.
+Why interesting: Reading the wrong copy or trusting a fallback silently produces wrong values (e.g. `var(--radius-md, 16px)` where the token is 12px; indigo hex fallbacks in a red-branded system); token files across copies differed in 8 of 12 files.
+Context: First analysis of the GastroSuit (Coffee House) handoff to derive the design system and judge screen readability.
+Source: Claude Code session 2026-10-21, coffee-house-ui/project/
+Suggested action: create new page (reading a Claude Design handoff: identify the live source by the primary screen's imports, ignore CSS fallbacks)
