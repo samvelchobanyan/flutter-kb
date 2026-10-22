@@ -759,12 +759,3 @@ Why interesting: Reading the wrong copy or trusting a fallback silently produces
 Context: First analysis of the GastroSuit (Coffee House) handoff to derive the design system and judge screen readability.
 Source: Claude Code session 2026-10-21, coffee-house-ui/project/
 Suggested action: create new page (reading a Claude Design handoff: identify the live source by the primary screen's imports, ignore CSS fallbacks)
-
-## [2026-10-22] candidate | GastroSuit | domain-model-from-app-not-api
-Type: principle
-Target applies_to: any-flutter-project
-What: The domain model is designed from the app's screens and user flows, not from the API's resources; the data layer adapts the API to it, including one entity assembled from several endpoints and one response split into several entities, and repository interfaces are grouped by domain concept rather than by endpoint group.
-Why interesting: [[dto-to-domain-mapping]] says entities describe "what the app cares about" but in practice DTOs and entities end up 1:1 with endpoints, so the API's structure (naming, splits like loyalty vs wallet, localized-map fields) leaks into features anyway. Limit: server-authoritative logic (prices, totals, redemption limits) is not re-modelled on the client.
-Context: Start of GastroSuit domain spec; the API (Swagger + Postman) differs from the PRD's concepts in several places.
-Source: Claude Code session 2026-10-22
-Suggested action: update [[dto-to-domain-mapping]] (how the domain shape is derived; non-1:1 mapping)
